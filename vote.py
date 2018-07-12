@@ -1,3 +1,4 @@
+#!coding:utf8
 from flask import Flask,redirect,url_for
 from flask import render_template
 from flask import request
@@ -13,7 +14,7 @@ def index():
         keys=["title","author","link"]
         for key in keys:
             article[key]=request.form[key]
-        flash("publish article {} sucessfully".format(article["title"]))
+        flash("发表文章\"{}\"成功！".format(article["title"]))
         return redirect(url_for('index'))
     return render_template("index.html")
 
