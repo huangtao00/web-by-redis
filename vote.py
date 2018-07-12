@@ -1,10 +1,11 @@
-from flask import Flask
+from flask import Flask,redirect,url_for
 from flask import render_template
 from flask import request
+from flask import flash
 
 
 app=Flask(__name__)
-
+app.secret_key = 'some_secret'
 @app.route("/",methods=["GET","POST"])
 def index():
     if request.method=="POST":
@@ -12,8 +13,8 @@ def index():
         keys=["title","author","link"]
         for key in keys:
             article[key]=request.form[key]
-        print (article)
-
+        flash("publish article {} sucessfully".format(article["title"]))
+        return redirect(url_for('index'))
     return render_template("index.html")
 
 
