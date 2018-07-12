@@ -8,8 +8,12 @@ app=Flask(__name__)
 @app.route("/",methods=["GET","POST"])
 def index():
     if request.method=="POST":
-        print ("you post me")
-        return ("you post me")
+        article={}
+        keys=["title","author","link"]
+        for key in keys:
+            article[key]=request.form[key]
+        print (article)
+
     return render_template("index.html")
 
 
