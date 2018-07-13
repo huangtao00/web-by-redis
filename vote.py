@@ -13,10 +13,41 @@ def save_aritle_redis(article):
     counter=r.incr("counter")
     for key, value in article.items():
         r.hset("article:"+str(counter),key,value)
-    r.hset("article:"+str(counter),"vote",0)
+def get_article_rank_by_score():
+    r=redis.StrictRedis(host="localhost",port=6379,decode_responses=True)
+    article_rank_by_score=r.zrange("time",0,-1,True,withscores=True)
+    if article_rank_by_score:
+        return article_rank_by_score
+    else:
+        return False
+def get_top_aritle(n=5):
+    article_list=get_article_rank_by_score()
+    if article_list:
+        n=min(n,len(article_list))
+        top_article_list=article_list[:n]
+        only_article_name_list=[]
+        r=redis.StrictRedis(host="localhost",port=6379,decode_responses=True)
+        for i in top_article_list:
+            article_id=i[0]
+            only_article_name_list.append(r.hget(article_id,"title"))
+        return only_article_name_list
+    else:
+        return False
 
 
-def get_articles(page=1,articelsperpage=6):
+def calc_articles_score():
+    r=redis.StrictRedis(host="localhost",port=6379,decode_responses=True)
+    counter=r.get("counter")
+    for i in range(1,int(counter)+1):
+        article_id="article:"+str(i)
+        vote=int(r.hget(article_id,"vote"))
+        uptime=float(r.hget(article_id,"uptime"))
+        score=uptime+vote*432
+        r.zadd("time",score,article_id)
+    article_rank_by_score=r.zrange("time",0,-1,True,withscores=True)
+    return article_rank_by_score
+
+def get_articles(page=1,articelsperpage=3):
     r=redis.StrictRedis(host="localhost",port=6379,decode_responses=True)
     counter=r.get("counter")
     if counter:
@@ -33,8 +64,8 @@ def get_articles(page=1,articelsperpage=6):
                 end=counter
             else:  #11 11-4
                 end=counter-(page-1)*articelsperpage
-                print (counter)
-                print (end)
+                # print (counter)
+                # print (end)
             start=end-articelsperpage+1
             end=end+1
         #cur  8 7 6 5 4 3 2 1
@@ -50,13 +81,15 @@ def get_articles(page=1,articelsperpage=6):
             article="article:"+str(i)
             onearticle=r.hgetall(article)
             onearticle["index"]=i
-            print (onearticle)
+            # print (onearticle)
             # if "vote" not in onearticle.keys():
             #     r.hset(article,"vote","0")
             #     # onearticle["vote"]=0
             articlelist.append(onearticle)
         articlelist.reverse()
         return articlelist,nextpage,previouspage
+    else:
+        return (False,False,False)
 app=Flask(__name__)
 app.secret_key = 'some_secret'
 @app.route("/api/vote/")
@@ -64,11 +97,15 @@ def api_add_vote():
     article_id=request.args.get("id").replace("art","")
     #incr redis score
     vote_score=incrbyscore(article_id)
+    artitle_rank=calc_articles_score() #upate article vote score rank
+    # print (artitle_rank)
     return jsonify({"vote":["vote"+str(article_id),vote_score]})
-def incrbyscore(article_id,incrment=30):
+def incrbyscore(article_id,incrment=1):
     r=redis.StrictRedis(host="localhost",port=6379,decode_responses=True)
-    result=r.hincrby("article:"+str(article_id), "vote", 30)
+    result=r.hincrby("article:"+str(article_id), "vote", incrment)
     return result
+
+
 
 
 @app.route("/",methods=["GET","POST"])
@@ -77,21 +114,28 @@ def index(index=1):
     if request.method=="POST":
         #save article to redis
         article={}
-        keys=["title","author","link","time"]
+        keys=["title","author","link","time","uptime","vote"]
         now=datetime.datetime.now()
         now=now.strftime("%Y-%m-%d-%H-%M")
+        uptime=round(datetime.datetime.timestamp(datetime.datetime.utcnow()),2)
         for key in keys:
-            if key !="time":
+            if key not in ["time","uptime","vote"]:
                 article[key]=request.form[key]
             else:
-                article[key]=now
+                if key=="time":
+                    article[key]=now
+                if key=="uptime":
+                    article[key]=uptime
+                if key=="vote":
+                    article["vote"]=0
         save_aritle_redis(article)
         flash("发表文章\"{}\"成功！".format(article["title"]))
         return redirect(url_for('index'))
     # show newest articles
     allarticles,nextpage,prepage=get_articles(page=index)
     pagenav=dict({"pre":prepage,"cur":index,"next":nextpage})
-    return render_template("index.html",articles=allarticles,pagenav=pagenav)
+    top_article=get_top_aritle(5)
+    return render_template("index.html",articles=allarticles,pagenav=pagenav,top_article=top_article)
 
 
 

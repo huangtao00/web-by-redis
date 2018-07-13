@@ -27,11 +27,11 @@
         文章作者: <input type="text" name="author"> <br>
        <input type="submit" name="" value="发表">
     </form>
-    <h1>最新文章</h1>
+
 
     {% if  articles%}
 
-
+    <h1>最新文章</h1>
      {% for article in articles %}
         <div style="float:left">
           <ul>
@@ -40,7 +40,7 @@
               </span>
               <!-- {{article.index}}  -->文章：{{article.title}} </li>
             <li>作者：{{article.author}}</li>
-            <li>发表日期：{{article.time}}</li>
+            <li>发表日期：{{article.time}} {{article.uptime}}</li>
             <li>链接：{{article.link}}</li>
           </ul>
         </div>
@@ -50,23 +50,31 @@
         <div class="" style="clear:left;"></div>
 
      {% endfor %}
-
-    {% endif %}
-    <div >
-      {% if pagenav.pre%}
-        {% for page in pagenav.pre %}
-          <!-- pre -->
+     <div >
+       {% if pagenav.pre%}
+         {% for page in pagenav.pre %}
+           <!-- pre -->
+            <a href="/page/{{page}}">{{page}}</a>
+         {% endfor %}
+       {% endif%}
+       {{pagenav.cur}}
+       {% if  pagenav.next%}
+        {% for page in pagenav.next %}
+        <!-- next -->
            <a href="/page/{{page}}">{{page}}</a>
         {% endfor %}
-      {% endif%}
-      {{pagenav.cur}}
-      {% if  pagenav.next%}
-       {% for page in pagenav.next %}
-       <!-- next -->
-          <a href="/page/{{page}}">{{page}}</a>
-       {% endfor %}
-      {% endif%}
-    </div>
+       {% endif%}
+     </div>
+    {% endif %}
+    {%if top_article%}
+    <h1>热们文章</h1>
+
+    <ul>
+       {% for article in top_article%}
+        <li>{{article}}</li>
+        {% endfor %}
+    </ul>
+    {% endif %}
 </div>
 <script type="text/javascript">
   function sendvote(e)
