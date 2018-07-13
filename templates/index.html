@@ -21,5 +21,33 @@
     </form>
     <h1>最新文章</h1>
 
+    {% if  articles%}
+    <ul>
+     {% for article in articles %}
+        <li>{{article.index}} 文章：{{article.title}} </li>
+        <li>作者：{{article.author}}</li>
+        <li>发表日期：{{article.time}}</li>
+        <li>链接：{{article.link}}</li>
+        <br>
+     {% endfor %}
+     </ul>
+    {% endif %}
+    <div >
+      {% if pagenav.pre%}
+        {% for page in pagenav.pre %}
+          <!-- pre -->
+           <a href="/page/{{page}}">{{page}}</a>
+        {% endfor %}
+      {% endif%}
+      {{pagenav.cur}}
+      {% if  pagenav.next%}
+       {% for page in pagenav.next %}
+       <!-- next -->
+          <a href="/page/{{page}}">{{page}}</a>
+       {% endfor %}
+      {% endif%}
+    </div>
+
+
   </body>
 </html>
