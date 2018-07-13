@@ -3,8 +3,16 @@
   <head>
     <meta charset="utf-8">
     <title>vote an article</title>
+    <!-- Latest compiled and minified CSS -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+
+    <!-- Optional theme -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap-theme.min.css" integrity="sha384-rHyoN1iRsVXV4nD0JutlnGaslCJuC7uwjduW9SVrLvRYooPp2bWYgmgJQIXwl/Sp" crossorigin="anonymous">
+    <script src="https://ajax.aspnetcdn.com/ajax/jQuery/jquery-3.3.1.min.js">
+    </script>
   </head>
   <body>
+    <div class="container">
     {% if get_flashed_messages() %}
       <p class=flashes>
           {% for message in get_flashed_messages() %}
@@ -22,15 +30,27 @@
     <h1>最新文章</h1>
 
     {% if  articles%}
-    <ul>
+
+
      {% for article in articles %}
-        <li>{{article.index}} 文章：{{article.title}} </li>
-        <li>作者：{{article.author}}</li>
-        <li>发表日期：{{article.time}}</li>
-        <li>链接：{{article.link}}</li>
-        <br>
+        <div style="float:left">
+          <ul>
+            <li >
+              <span class="glyphicon glyphicon-thumbs-up" id="art{{article.index}}" aria-hidden="true" onclick="sendvote(this)">
+              </span>
+              <!-- {{article.index}}  -->文章：{{article.title}} </li>
+            <li>作者：{{article.author}}</li>
+            <li>发表日期：{{article.time}}</li>
+            <li>链接：{{article.link}}</li>
+          </ul>
+        </div>
+        <div style="float:left">
+          支持:<span id="vote{{article.index}}">{{article.vote}}</span>
+        </div>
+        <div class="" style="clear:left;"></div>
+
      {% endfor %}
-     </ul>
+
     {% endif %}
     <div >
       {% if pagenav.pre%}
@@ -47,7 +67,32 @@
        {% endfor %}
       {% endif%}
     </div>
+</div>
+<script type="text/javascript">
+  function sendvote(e)
+  {
+    // console.log(e.id);
+    // send get to flask server
+      $.ajax({
+    url: "/api/vote/",
+    data: "id="+e.id,
+    success: success,
+    dataType: "json"
+  });
+  }
 
-
+  function success(response,status,xhr) {
+    // console.log(response);
+    var voteres=response["vote"];
+    var voteid=voteres[0];
+    var votescore=voteres[1];
+    var vote_tag=document.getElementById(voteid);
+    vote_tag.innerHTML=votescore;
+    // console.log(vote_tag);
+    // console.log(status);
+  }
+</script>
+    <!-- Latest compiled and minified JavaScript -->
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
   </body>
 </html>

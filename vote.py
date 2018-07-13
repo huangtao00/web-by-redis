@@ -2,17 +2,20 @@
 from flask import Flask,redirect,url_for
 from flask import render_template
 from flask import request
-from flask import flash
+from flask import flash,jsonify
 import datetime
 import redis
+import math
+
 def save_aritle_redis(article):
     r=redis.StrictRedis(host="localhost",port=6379,decode_responses=True)
     #以下代码要保证atomic
     counter=r.incr("counter")
     for key, value in article.items():
         r.hset("article:"+str(counter),key,value)
+    r.hset("article:"+str(counter),"vote",0)
 
-import math
+
 def get_articles(page=1,articelsperpage=6):
     r=redis.StrictRedis(host="localhost",port=6379,decode_responses=True)
     counter=r.get("counter")
@@ -47,11 +50,27 @@ def get_articles(page=1,articelsperpage=6):
             article="article:"+str(i)
             onearticle=r.hgetall(article)
             onearticle["index"]=i
+            print (onearticle)
+            # if "vote" not in onearticle.keys():
+            #     r.hset(article,"vote","0")
+            #     # onearticle["vote"]=0
             articlelist.append(onearticle)
         articlelist.reverse()
         return articlelist,nextpage,previouspage
 app=Flask(__name__)
 app.secret_key = 'some_secret'
+@app.route("/api/vote/")
+def api_add_vote():
+    article_id=request.args.get("id").replace("art","")
+    #incr redis score
+    vote_score=incrbyscore(article_id)
+    return jsonify({"vote":["vote"+str(article_id),vote_score]})
+def incrbyscore(article_id,incrment=30):
+    r=redis.StrictRedis(host="localhost",port=6379,decode_responses=True)
+    result=r.hincrby("article:"+str(article_id), "vote", 30)
+    return result
+
+
 @app.route("/",methods=["GET","POST"])
 @app.route("/page/<int:index>",methods=["GET","POST"])
 def index(index=1):
